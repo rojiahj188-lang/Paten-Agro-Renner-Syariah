@@ -1,0 +1,25 @@
+<svg viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Official PT. Renner Inti Internasional Emerald Forest Green Background -->
+  <rect width="200" height="200" rx="36" fill="#016836"/>
+  
+  <!-- The Stylized 'R' Tree Mark in Pure White -->
+  <g fill="#FFFFFF">
+    <!-- 1. Top-Left Branch Segment -->
+    <path d="M 22 16 H 88 V 76 L 22 46 Z"/>
+    
+    <!-- 2. Middle-Left Branch Segment -->
+    <path d="M 22 60 L 88 90 V 134 L 22 104 Z"/>
+    
+    <!-- 3. Bottom-Left Segment with Characteristic Smooth Rounded Corner -->
+    <path d="M 22 118 L 88 148 V 184 H 52 C 34 184 22 172 22 154 Z"/>
+
+    <!-- 4. Upper Bowl Segment of the 'R' -->
+    <path d="M 104 16 H 144 C 168 16 182 30 182 52 C 182 66 174 76 164 80 L 104 76 Z"/>
+    
+    <!-- 5. Lower Bowl Segment of the 'R' -->
+    <path d="M 104 90 L 158 84 C 170 92 172 106 164 116 L 104 134 Z"/>
+    
+    <!-- 6. Sturdy Diagonal Leg Segment of the 'R' -->
+    <path d="M 104 148 L 148 127 L 182 184 H 140 L 104 148 Z"/>
+  </g>
+</svg>

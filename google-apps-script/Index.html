@@ -1,0 +1,853 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Paten Agro Renner Syariah - Pupuk Organik Nano</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            renner: {
+              50: '#f0fdf4',
+              100: '#dcfce7',
+              600: '#16a34a',
+              700: '#15803d',
+              800: '#166534',
+              900: '#14532d',
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Google Fonts & jsPDF -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+
+  <style>
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+    }
+    .font-outfit {
+      font-family: 'Outfit', sans-serif;
+    }
+    /* Hide scrollbar for tabs */
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+  </style>
+</head>
+<body class="bg-slate-100 dark:bg-slate-950 text-slate-800 dark:text-slate-100 min-h-screen flex flex-col transition-colors">
+
+  <!-- Header Bar -->
+  <header class="sticky top-0 z-40 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-emerald-100 dark:border-slate-800 shadow-xs">
+    <div class="max-w-5xl mx-auto px-4 py-2.5 flex items-center justify-between">
+      
+      <!-- Brand & Info -->
+      <div class="flex items-center space-x-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-600 to-teal-800 flex items-center justify-center text-white font-black text-xl shadow-md border border-emerald-400/40">
+          🌱
+        </div>
+        <div>
+          <div class="flex items-center space-x-1.5">
+            <h1 class="font-extrabold text-base tracking-tight text-slate-900 dark:text-slate-50 font-outfit">
+              PATEN <span class="text-emerald-700 dark:text-emerald-400">AGRO</span>
+            </h1>
+            <span class="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800">
+              RENNER SYARIAH
+            </span>
+          </div>
+          <p class="text-[10px] sm:text-[11px] text-slate-500 dark:text-slate-400">
+            Teknologi Nano Organik • DSN-MUI • Kementan RI
+          </p>
+          <p class="text-[10px] font-bold text-emerald-800 dark:text-emerald-400">
+            Pengembang: <span class="text-slate-800 dark:text-slate-200">Husni, S. Kom. I.</span> <span class="text-amber-600 dark:text-amber-400 font-extrabold">(Member Renner Syariah)</span>
+          </p>
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="flex items-center space-x-2">
+        <!-- Google Sheets Database Link -->
+        <button id="btnSpreadsheet" onclick="openDatabaseSpreadsheet()" class="hidden sm:flex px-2.5 py-1.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 hover:bg-emerald-100 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800 text-xs font-bold items-center gap-1.5 transition-colors" title="Buka Spreadsheet Google Sheets">
+          <span>📊</span>
+          <span class="hidden md:inline">Google Sheets</span>
+        </button>
+
+        <!-- Sync Button -->
+        <button onclick="triggerSyncData()" id="btnSync" class="p-2 rounded-xl text-slate-600 dark:text-slate-300 hover:text-emerald-700 hover:bg-emerald-50 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 transition-colors" title="Sinkronkan dengan Google Sheets">
+          <span id="syncIcon" class="inline-block">🔄</span>
+        </button>
+
+        <!-- Dark Mode Toggle -->
+        <button onclick="toggleDarkMode()" class="p-2 rounded-xl text-slate-600 dark:text-slate-300 hover:text-emerald-700 hover:bg-emerald-50 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 transition-colors">
+          <span id="themeIcon">🌙</span>
+        </button>
+      </div>
+
+    </div>
+  </header>
+
+  <!-- Navigation Tabs -->
+  <nav class="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 sticky top-[61px] z-30 shadow-2xs">
+    <div class="max-w-5xl mx-auto px-2 flex overflow-x-auto no-scrollbar space-x-1 py-1.5 text-xs font-bold">
+      <button onclick="switchTab('calculator')" id="tab-calculator" class="tab-btn px-3.5 py-2 rounded-xl bg-emerald-700 text-white shadow-xs whitespace-nowrap">
+        🧮 Kalkulator Dosis
+      </button>
+      <button onclick="switchTab('landmap')" id="tab-landmap" class="tab-btn px-3.5 py-2 rounded-xl text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 whitespace-nowrap">
+        📍 Titik Lahan NTB
+      </button>
+      <button onclick="switchTab('analytics')" id="tab-analytics" class="tab-btn px-3.5 py-2 rounded-xl text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 whitespace-nowrap">
+        📊 Analitik & PDF
+      </button>
+      <button onclick="switchTab('nutrisi')" id="tab-nutrisi" class="tab-btn px-3.5 py-2 rounded-xl text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 whitespace-nowrap">
+        🧪 Kebutuhan Nutrisi
+      </button>
+      <button onclick="switchTab('forum')" id="tab-forum" class="tab-btn px-3.5 py-2 rounded-xl text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 whitespace-nowrap">
+        💬 Forum Petani
+      </button>
+      <button onclick="switchTab('musiman')" id="tab-musiman" class="tab-btn px-3.5 py-2 rounded-xl text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 whitespace-nowrap">
+        🌦️ Wawasan Musiman
+      </button>
+    </div>
+  </nav>
+
+  <!-- Main Container -->
+  <main class="flex-1 max-w-5xl w-full mx-auto p-3 sm:p-5 space-y-5">
+    
+    <!-- Toast Banner -->
+    <div id="syncToast" class="hidden fixed top-16 left-1/2 -translate-x-1/2 z-50 bg-slate-900/90 text-white text-xs font-semibold px-4 py-2 rounded-full shadow-lg backdrop-blur-md flex items-center gap-2 border border-slate-700">
+      <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+      <span id="syncToastText">Menyinkronkan data...</span>
+    </div>
+
+    <!-- TAB 1: KALKULATOR DOSIS PUPUK PATEN (1-100 ARE) -->
+    <section id="view-calculator" class="tab-view space-y-5">
+      <!-- Banner Card -->
+      <div class="bg-gradient-to-r from-emerald-900 via-teal-900 to-emerald-800 text-white rounded-3xl p-5 sm:p-6 shadow-md border border-emerald-700/50">
+        <span class="inline-block px-2.5 py-0.5 rounded-full bg-emerald-400/20 text-emerald-200 text-xs font-bold mb-2">
+          Kalkulator Efisiensi Dosis Pupuk Paten Nano
+        </span>
+        <h2 class="text-xl sm:text-2xl font-black font-outfit">Simulasi Kebutuhan Pupuk (1 - 100 Are)</h2>
+        <p class="text-xs sm:text-sm text-emerald-100 mt-1 max-w-xl">
+          Hitung akurat kebutuhan Paten Hijau, Paten Gold, dan Paten Imun serta estimasi penghematan biaya kimia konvensional hingga 70%.
+        </p>
+      </div>
+
+      <!-- Controls Grid -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        
+        <!-- Input Parameters Panel -->
+        <div class="bg-white dark:bg-slate-900 p-5 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xs space-y-4">
+          <h3 class="font-bold text-slate-900 dark:text-slate-100 text-sm flex items-center gap-2">
+            <span>⚙️</span> Parameter Lahan Pertanian
+          </h3>
+
+          <!-- Komoditi -->
+          <div>
+            <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Pilih Jenis Komoditi</label>
+            <select id="calcCommodity" onchange="runCalculation()" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-semibold">
+              <option value="padi">Padi Sawah (Inpari / Ciherang / Sintanur)</option>
+              <option value="jagung">Jagung Hibrida (BISI / Pioneer / NK)</option>
+              <option value="bawang">Bawang Merah (Bima Brebes / Tajuk)</option>
+              <option value="sawit">Kelapa Sawit (TBM / TM)</option>
+              <option value="cabai">Cabai Rawit / Cabai Merah</option>
+              <option value="tembakau">Tembakau Virginia (Praya / Lombok)</option>
+            </select>
+          </div>
+
+          <!-- Luas Lahan (Are) -->
+          <div>
+            <div class="flex justify-between text-xs font-bold mb-1">
+              <label class="text-slate-700 dark:text-slate-300">Luas Lahan:</label>
+              <span id="labelArea" class="text-emerald-700 dark:text-emerald-400 font-extrabold text-sm">20 Are (2.000 m²)</span>
+            </div>
+            <input type="range" id="inputArea" min="1" max="100" value="20" oninput="updateArea(this.value)" class="w-full accent-emerald-600 cursor-pointer">
+            <div class="flex justify-between text-[10px] text-slate-400 mt-0.5">
+              <span>1 Are (100 m²)</span>
+              <span>50 Are (0.5 Ha)</span>
+              <span>100 Are (1 Hektar)</span>
+            </div>
+          </div>
+
+          <!-- Slider pH Tanah -->
+          <div>
+            <div class="flex justify-between text-xs font-bold mb-1">
+              <label class="text-slate-700 dark:text-slate-300">Kondisi pH Tanah:</label>
+              <span id="labelPh" class="text-amber-600 dark:text-amber-400 font-extrabold">pH 6.2 (Netral / Agak Asam)</span>
+            </div>
+            <input type="range" id="inputPh" min="4.0" max="8.0" step="0.1" value="6.2" oninput="updatePh(this.value)" class="w-full accent-amber-500 cursor-pointer">
+            <p id="descPh" class="text-[11px] text-slate-500 dark:text-slate-400 mt-1">
+              Kondisi tanah ideal, serapan hara Paten Organik mencapai 95%.
+            </p>
+          </div>
+        </div>
+
+        <!-- Output Calculation Summary -->
+        <div class="bg-white dark:bg-slate-900 p-5 rounded-3xl border border-emerald-300 dark:border-emerald-800 shadow-2xs space-y-4 flex flex-col justify-between">
+          <div>
+            <h3 class="font-bold text-emerald-800 dark:text-emerald-400 text-sm flex items-center gap-2">
+              <span>📦</span> Paket Pupuk Paten Yang Direkomendasikan
+            </h3>
+
+            <div class="grid grid-cols-3 gap-2 mt-3 text-center">
+              <div class="p-3 bg-emerald-50 dark:bg-emerald-950/60 rounded-2xl border border-emerald-200 dark:border-emerald-800">
+                <span class="text-[10px] font-bold text-slate-500 uppercase block">Paten Hijau</span>
+                <span id="resPatenHijau" class="text-lg font-black text-emerald-700 dark:text-emerald-400">2 Box</span>
+                <span class="text-[9px] text-slate-400 block">(48 Sachet)</span>
+              </div>
+              <div class="p-3 bg-amber-50 dark:bg-amber-950/60 rounded-2xl border border-amber-200 dark:border-amber-800">
+                <span class="text-[10px] font-bold text-slate-500 uppercase block">Paten Gold</span>
+                <span id="resPatenGold" class="text-lg font-black text-amber-600 dark:text-amber-400">2 Box</span>
+                <span class="text-[9px] text-slate-400 block">(24 Sachet)</span>
+              </div>
+              <div class="p-3 bg-sky-50 dark:bg-sky-950/60 rounded-2xl border border-sky-200 dark:border-sky-800">
+                <span class="text-[10px] font-bold text-slate-500 uppercase block">Paten Imun</span>
+                <span id="resPatenImun" class="text-lg font-black text-sky-700 dark:text-sky-400">2 Box</span>
+                <span class="text-[9px] text-slate-400 block">(Anti-Hama)</span>
+              </div>
+            </div>
+
+            <!-- Financial Comparison -->
+            <div class="mt-4 p-3.5 bg-slate-50 dark:bg-slate-950/60 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-2 text-xs">
+              <div class="flex justify-between">
+                <span class="text-slate-500">Estimasi Biaya Pupuk Kimia:</span>
+                <span id="resCostKimia" class="font-bold text-slate-800 dark:text-slate-200">Rp 1.450.000</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-slate-500">Biaya Pupuk Paten Nano:</span>
+                <span id="resCostPaten" class="font-bold text-emerald-700 dark:text-emerald-400">Rp 450.000</span>
+              </div>
+              <div class="flex justify-between pt-1 border-t border-slate-200 dark:border-slate-800 font-bold text-amber-600 dark:text-amber-400">
+                <span>Penghematan Bersih:</span>
+                <span id="resHematRp">Rp 1.000.000 (Hemat 69%)</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="pt-3 border-t border-slate-100 dark:border-slate-800 flex justify-between items-center text-xs">
+            <span class="text-slate-500">Proyeksi Panen: <strong id="resPanenTon" class="text-slate-800 dark:text-slate-200 font-black">1.6 Ton</strong></span>
+            <button onclick="switchTab('analytics')" class="px-3 py-1.5 bg-emerald-700 hover:bg-emerald-800 text-white font-bold rounded-xl shadow-xs transition-colors">
+              Simpan ke Analitik ➔
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- TAB 2: TITIK LOKASI LAHAN PETANI NTB -->
+    <section id="view-landmap" class="tab-view hidden space-y-5">
+      <div class="bg-gradient-to-r from-teal-900 via-emerald-900 to-teal-950 text-white rounded-3xl p-5 sm:p-6 shadow-md flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+        <div>
+          <span class="inline-block px-2.5 py-0.5 rounded-full bg-teal-400/20 text-teal-200 text-xs font-bold mb-1">
+            Sebaran Demplot & Petani Binaan NTB
+          </span>
+          <h2 class="text-xl sm:text-2xl font-black font-outfit">Peta Titik Lahan Lombok & Sumbawa</h2>
+          <p class="text-xs text-teal-100 mt-0.5">
+            Lombok Barat, Lombok Tengah, Lombok Utara, Sumbawa Barat, Sumbawa Besar, Dompu, dan Bima.
+          </p>
+        </div>
+        <button onclick="openAddPlotModal()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl shadow-xs shrink-0">
+          + Tambah Titik Lahan
+        </button>
+      </div>
+
+      <!-- District Filter Pills -->
+      <div class="flex flex-wrap gap-1.5 text-xs font-bold">
+        <button onclick="filterPlots('Semua')" class="px-3 py-1.5 rounded-xl bg-slate-900 text-white">Semua NTB</button>
+        <button onclick="filterPlots('Lombok Barat')" class="px-3 py-1.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">Lombok Barat</button>
+        <button onclick="filterPlots('Lombok Tengah')" class="px-3 py-1.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">Lombok Tengah</button>
+        <button onclick="filterPlots('Lombok Utara')" class="px-3 py-1.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">Lombok Utara</button>
+        <button onclick="filterPlots('Sumbawa Barat')" class="px-3 py-1.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">Sumbawa Barat</button>
+        <button onclick="filterPlots('Sumbawa Besar')" class="px-3 py-1.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">Sumbawa Besar</button>
+        <button onclick="filterPlots('Dompu')" class="px-3 py-1.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">Dompu</button>
+        <button onclick="filterPlots('Bima')" class="px-3 py-1.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">Bima</button>
+      </div>
+
+      <!-- Plots List Container -->
+      <div id="plotsContainer" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <!-- Rendered via JS -->
+      </div>
+    </section>
+
+    <!-- TAB 3: DASBOR ANALITIK & UNDUH LAPORAN TAHUNAN PDF -->
+    <section id="view-analytics" class="tab-view hidden space-y-5">
+      <div class="bg-gradient-to-r from-emerald-950 via-slate-900 to-emerald-900 text-white rounded-3xl p-5 sm:p-6 shadow-md flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+        <div>
+          <span class="inline-block px-2.5 py-0.5 rounded-full bg-amber-400/20 text-amber-300 text-xs font-bold mb-1">
+            Standar KUR Perbankan & Koperasi
+          </span>
+          <h2 class="text-xl sm:text-2xl font-black font-outfit">Laporan Analitik Tahunan Resmi (PDF)</h2>
+          <p class="text-xs text-slate-300 mt-0.5">
+            Kompilasi riil tonase panen, penghematan pupuk, dan kelayakan finansial bersertifikasi Syariah.
+          </p>
+        </div>
+        <div class="flex gap-2">
+          <button onclick="downloadAnnualPDF()" class="px-4 py-2 bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-extrabold text-xs rounded-xl shadow-lg border border-emerald-400/40">
+            📄 Unduh Laporan Tahunan (PDF)
+          </button>
+        </div>
+      </div>
+
+      <!-- 3 Metrics KPI Cards -->
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <div class="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-2xs">
+          <span class="text-[11px] font-bold text-slate-500 uppercase block">Rata-rata Panen Paten</span>
+          <div class="text-2xl font-black text-emerald-700 dark:text-emerald-400 font-outfit mt-1">8.2 Ton/Ha</div>
+          <span class="text-xs font-bold text-emerald-600">(+49% vs Pola Kimia)</span>
+        </div>
+        <div class="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-2xs">
+          <span class="text-[11px] font-bold text-slate-500 uppercase block">Efisiensi Biaya Pupuk</span>
+          <div class="text-2xl font-black text-amber-600 dark:text-amber-400 font-outfit mt-1">60% - 75%</div>
+          <span class="text-xs text-slate-400">Hemat fungisida 100%</span>
+        </div>
+        <div class="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-2xs">
+          <span class="text-[11px] font-bold text-slate-500 uppercase block">Kelayakan Usaha (B/C)</span>
+          <div class="text-2xl font-black text-slate-900 dark:text-slate-100 font-outfit mt-1">3.12 (Sangat Layak)</div>
+          <span class="text-xs text-emerald-600 font-bold">Siap Pengajuan KUR</span>
+        </div>
+      </div>
+
+      <!-- Harvest Records List -->
+      <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-4 space-y-3">
+        <h3 class="font-extrabold text-sm text-slate-900 dark:text-slate-100">
+          Riwayat Catatan Panen Lapangan
+        </h3>
+        <div id="harvestListContainer" class="space-y-2.5 text-xs">
+          <!-- Rendered via JS -->
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 4: KEBUTUHAN NUTRISI TANAMAN -->
+    <section id="view-nutrisi" class="tab-view hidden space-y-5">
+      <div class="bg-gradient-to-r from-amber-900 via-emerald-900 to-amber-950 text-white rounded-3xl p-5 sm:p-6 shadow-md">
+        <span class="inline-block px-2.5 py-0.5 rounded-full bg-amber-400/20 text-amber-300 text-xs font-bold mb-1">
+          Kalkulator Kebutuhan Nutrisi Tanaman (NPK)
+        </span>
+        <h2 class="text-xl sm:text-2xl font-black font-outfit">Estimasi Hara Makro & Mikro Paten Nano</h2>
+        <p class="text-xs text-amber-100 mt-0.5">
+          Perhitungan kebutuhan hara tanaman per fase vegetatif (pertumbuhan) & generatif (pembuahan).
+        </p>
+      </div>
+
+      <div class="bg-white dark:bg-slate-900 p-5 rounded-3xl border border-slate-200 dark:border-slate-800 space-y-4">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+          <div>
+            <label class="block font-bold mb-1">Komoditi Pertanian:</label>
+            <select id="nutrisiCrop" onchange="calcNutrisi()" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl p-2.5">
+              <option value="Padi">Padi Sawah (Inpari / Ciherang)</option>
+              <option value="Jagung">Jagung Hibrida</option>
+              <option value="Bawang">Bawang Merah Bima</option>
+              <option value="Cabai">Cabai Rawit</option>
+            </select>
+          </div>
+          <div>
+            <label class="block font-bold mb-1">Fase Pertumbuhan:</label>
+            <select id="nutrisiPhase" onchange="calcNutrisi()" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl p-2.5">
+              <option value="Vegetatif">Fase Vegetatif (10 - 35 HST)</option>
+              <option value="Generatif">Fase Generatif / Bunting (40 - 65 HST)</option>
+              <option value="Pematangan">Fase Pengisian Bulir (70 - 85 HST)</option>
+            </select>
+          </div>
+        </div>
+
+        <div id="nutrisiResultBox" class="p-4 bg-emerald-50 dark:bg-emerald-950/40 rounded-2xl border border-emerald-200 dark:border-emerald-800 text-xs space-y-2">
+          <!-- Rendered via JS -->
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 5: FORUM PETANI RENNER SYARIAH -->
+    <section id="view-forum" class="tab-view hidden space-y-5">
+      <div class="bg-gradient-to-r from-teal-900 via-slate-900 to-teal-950 text-white rounded-3xl p-5 sm:p-6 shadow-md flex justify-between items-center">
+        <div>
+          <span class="inline-block px-2.5 py-0.5 rounded-full bg-teal-400/20 text-teal-200 text-xs font-bold mb-1">
+            Forum Diskusi Petani Nusantara
+          </span>
+          <h2 class="text-xl sm:text-2xl font-black font-outfit">Berbagi Pengalaman & Solusi Lahan</h2>
+          <p class="text-xs text-teal-100 mt-0.5">
+            Tersinkronisasi otomatis dengan Google Sheets komunitas petani binaan Renner Syariah.
+          </p>
+        </div>
+      </div>
+
+      <!-- Add Forum Post Form -->
+      <div class="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-3 text-xs">
+        <h4 class="font-extrabold text-slate-900 dark:text-slate-100">Bagikan Pengalaman / Pertanyaan Anda:</h4>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          <input type="text" id="forumName" placeholder="Nama Anda (Petani/Mitra)" class="bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 p-2 rounded-xl">
+          <input type="text" id="forumRegion" placeholder="Wilayah (Contoh: Narmada, Lombok Barat)" class="bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 p-2 rounded-xl">
+        </div>
+        <input type="text" id="forumTitle" placeholder="Judul pengalaman (Contoh: Hasil panen padi meningkat 35%)" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 p-2 rounded-xl">
+        <textarea id="forumMessage" rows="2" placeholder="Tuliskan pengalaman atau tips pemupukan Paten Anda..." class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 p-2 rounded-xl"></textarea>
+        <button onclick="submitForumPost()" class="px-4 py-2 bg-emerald-700 hover:bg-emerald-800 text-white font-bold rounded-xl shadow-xs">
+          Kirim Postingan Diskusi
+        </button>
+      </div>
+
+      <!-- Posts List -->
+      <div id="forumListContainer" class="space-y-3">
+        <!-- Rendered via JS -->
+      </div>
+    </section>
+
+    <!-- TAB 6: WAWASAN MUSIMAN & KALENDER BMKG -->
+    <section id="view-musiman" class="tab-view hidden space-y-5">
+      <div class="bg-gradient-to-r from-blue-900 via-indigo-900 to-slate-900 text-white rounded-3xl p-5 sm:p-6 shadow-md">
+        <span class="inline-block px-2.5 py-0.5 rounded-full bg-blue-400/20 text-blue-200 text-xs font-bold mb-1">
+          Wawasan Musiman Berbasis Kalender BMKG NTB
+        </span>
+        <h2 class="text-xl sm:text-2xl font-black font-outfit">Kalender Tanam & Prediksi Cuaca Lahan</h2>
+        <p class="text-xs text-blue-100 mt-0.5">
+          Protokol perlindungan tanaman menghadapi musim hujan, kelembapan tinggi, dan ancaman jamur blas.
+        </p>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+        <div class="p-4 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-2">
+          <span class="font-extrabold text-emerald-700 dark:text-emerald-400 text-sm block">🌧️ Rekomendasi Musim Hujan (Rendeng)</span>
+          <p class="text-slate-600 dark:text-slate-300 leading-relaxed">
+            Hindari pemakaian Urea berlebihan saat curah hujan tinggi karena memicu tanaman sukulen dan rentan rebah. Wajib campurkan <strong>Paten Imun</strong> pada setiap penyemprotan guna meningkatkan dinding sel tanaman melawan jamur patogen.
+          </p>
+        </div>
+
+        <div class="p-4 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-2">
+          <span class="font-extrabold text-amber-600 dark:text-amber-400 text-sm block">☀️ Rekomendasi Musim Kemarau (Gadu)</span>
+          <p class="text-slate-600 dark:text-slate-300 leading-relaxed">
+            Kombinasikan <strong>Paten Gold</strong> dengan penyiraman pagi hari (pukul 06.00 - 09.00 WITA) saat stomata daun terbuka lebar. Partikel nano Paten diserap tanaman dalam 15 menit tanpa terbuang oleh penguapan matahari.
+          </p>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- App Footer -->
+  <footer class="mt-8 pb-12 text-center text-xs text-slate-500 dark:text-slate-400 space-y-1 border-t border-slate-200 dark:border-slate-800 pt-5">
+    <p class="font-semibold text-slate-700 dark:text-slate-300">
+      Paten Agro Renner Syariah • Teknologi Pupuk Organik Nano
+    </p>
+    <p class="font-bold text-emerald-800 dark:text-emerald-400">
+      Pengembang Aplikasi: <span class="text-slate-900 dark:text-slate-100 font-extrabold">Husni, S. Kom. I.</span> (Member Renner Syariah)
+    </p>
+    <p class="text-[11px] text-slate-400">
+      Izin Kementan RI No. 02.02.2022.763 • Opini Syariah DSN-MUI No. 012.161.01/DSN-MUI/1X/2023
+    </p>
+  </footer>
+
+  <!-- Application Client Script -->
+  <script>
+    // Inisialisasi Data Default NTB (Fallback jika offline)
+    var landPlots = [
+      { id: 'PLT-001', farmerName: "Lalu Mas'ud", region: 'Lombok Barat', district: 'Narmada', commodityName: 'Padi Sawah Organik', areaInAre: 25, soilPh: 6.2, lat: -8.6833, lon: 116.1333, rec: 'Paket Paten Hijau + Gold' },
+      { id: 'PLT-002', farmerName: 'H. Baiq Mulyani', region: 'Lombok Tengah', district: 'Praya Timur', commodityName: 'Tembakau Virginia', areaInAre: 35, soilPh: 5.7, lat: -8.7000, lon: 116.2833, rec: 'Paten Imun + Pembenah pH' },
+      { id: 'PLT-003', farmerName: 'Amaq Rohani', region: 'Lombok Utara', district: 'Bayan', commodityName: 'Jagung Hibrida', areaInAre: 40, soilPh: 6.4, lat: -8.3500, lon: 116.1667, rec: 'Paten Hijau & Gold' },
+      { id: 'PLT-004', farmerName: 'Dae Ruslan', region: 'Bima', district: 'Woha', commodityName: 'Bawang Merah Bima', areaInAre: 20, soilPh: 6.5, lat: -8.4500, lon: 118.7333, rec: 'Paket Paten Anti-Layu' },
+      { id: 'PLT-005', farmerName: 'Muhammad Syahrir', region: 'Dompu', district: 'Kempo', commodityName: 'Jagung Hibrida', areaInAre: 50, soilPh: 6.1, lat: -8.5333, lon: 118.4667, rec: 'Paten Gold Food Estate' },
+      { id: 'PLT-006', farmerName: 'Drs. H. Syamsuddin', region: 'Sumbawa Besar', district: 'Utan', commodityName: 'Padi Gogo', areaInAre: 30, soilPh: 6.3, lat: -8.5000, lon: 117.4333, rec: 'Paten Imun Tahan Hama' },
+      { id: 'PLT-007', farmerName: 'Abdul Gani', region: 'Sumbawa Barat', district: 'Taliwang', commodityName: 'Padi Sawah', areaInAre: 18, soilPh: 6.0, lat: -8.7500, lon: 116.8500, rec: 'Pola Paten Hemat Kimia 75%' }
+    ];
+
+    var harvestRecords = [
+      { id: 'HV-001', date: '2026-03-15', seasonName: 'Musim Rendeng MT-1 2026', commodityName: 'Padi Sawah', areaInAre: 20, method: 'Paten Nano', yieldKg: 1680, costRp: 480000, revenueRp: 11424000, profitRp: 10944000, notes: 'Bulir padi bernas, tahan blas daun' },
+      { id: 'HV-002', date: '2025-11-20', seasonName: 'Musim Gadu 2025', commodityName: 'Padi Sawah', areaInAre: 20, method: 'Kimia Konvensional', yieldKg: 1100, costRp: 1450000, revenueRp: 7480000, profitRp: 6030000, notes: 'Terserang sundep & biaya urea membengkak' }
+    ];
+
+    var forumPosts = [
+      { id: 'FRM-001', farmerName: "Lalu Mas'ud", region: 'Lombok Barat', title: 'Padi Narmada Panen 1.68 Ton dari 20 Are', message: 'Alhamdulillah aplikasi Paten Hijau umur 10, 20, 30 HST dan Paten Gold 45 HST berhasil memangkas biaya pupuk dan hasil panen naik signifikan.', likes: 14 }
+    ];
+
+    var isDarkMode = false;
+    var spreadsheetUrl = '';
+
+    // Switch Tab Function
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-view').forEach(function(el) { el.classList.add('hidden'); });
+      document.querySelectorAll('.tab-btn').forEach(function(el) {
+        el.className = 'tab-btn px-3.5 py-2 rounded-xl text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 whitespace-nowrap';
+      });
+
+      var activeView = document.getElementById('view-' + tabId);
+      var activeBtn = document.getElementById('tab-' + tabId);
+      if (activeView) activeView.classList.remove('hidden');
+      if (activeBtn) {
+        activeBtn.className = 'tab-btn px-3.5 py-2 rounded-xl bg-emerald-700 text-white shadow-xs whitespace-nowrap';
+      }
+    }
+
+    // Toggle Dark Mode
+    function toggleDarkMode() {
+      isDarkMode = !isDarkMode;
+      if (isDarkMode) {
+        document.documentElement.classList.add('dark');
+        document.getElementById('themeIcon').innerText = '☀️';
+      } else {
+        document.documentElement.classList.remove('dark');
+        document.getElementById('themeIcon').innerText = '🌙';
+      }
+    }
+
+    // Toast Notification
+    function showToast(text) {
+      var toast = document.getElementById('syncToast');
+      document.getElementById('syncToastText').innerText = text;
+      toast.classList.remove('hidden');
+      setTimeout(function() { toast.classList.add('hidden'); }, 3000);
+    }
+
+    // Kalkulator Dosis Update
+    function updateArea(val) {
+      var are = parseInt(val) || 1;
+      document.getElementById('labelArea').innerText = are + ' Are (' + (are * 100).toLocaleString('id-ID') + ' m²)';
+      runCalculation();
+    }
+
+    function updatePh(val) {
+      var ph = parseFloat(val) || 6.2;
+      var desc = document.getElementById('descPh');
+      if (ph < 5.5) {
+        document.getElementById('labelPh').innerText = 'pH ' + ph + ' (Asam / Masam)';
+        desc.innerText = 'Wajib tambahkan Paten Imun untuk menetralkan asam tanah dan mengaktifkan mikroba bermanfaat.';
+      } else if (ph > 7.5) {
+        document.getElementById('labelPh').innerText = 'pH ' + ph + ' (Alkali / Basa)';
+        desc.innerText = 'Kandungan basa tinggi, kurangi kapur dan optimalkan Paten Hijau.';
+      } else {
+        document.getElementById('labelPh').innerText = 'pH ' + ph + ' (Ideal / Netral)';
+        desc.innerText = 'Kondisi tanah ideal, serapan hara nano Paten mencapai tingkat maksimal 95%.';
+      }
+      runCalculation();
+    }
+
+    function runCalculation() {
+      var are = parseInt(document.getElementById('inputArea').value) || 20;
+      var boxes = Math.max(1, Math.ceil(are / 10));
+
+      document.getElementById('resPatenHijau').innerText = boxes + ' Box';
+      document.getElementById('resPatenGold').innerText = boxes + ' Box';
+      document.getElementById('resPatenImun').innerText = boxes + ' Box';
+
+      var patenCost = boxes * 225000;
+      var kimiaCost = are * 72500;
+      var hemat = Math.max(0, kimiaCost - patenCost);
+      var hematPct = Math.round((hemat / kimiaCost) * 100);
+
+      document.getElementById('resCostPaten').innerText = 'Rp ' + patenCost.toLocaleString('id-ID');
+      document.getElementById('resCostKimia').innerText = 'Rp ' + kimiaCost.toLocaleString('id-ID');
+      document.getElementById('resHematRp').innerText = 'Rp ' + hemat.toLocaleString('id-ID') + ' (Hemat ' + hematPct + '%)';
+      document.getElementById('resPanenTon').innerText = ((are * 80) / 1000).toFixed(1) + ' Ton';
+    }
+
+    // Render Titik Lahan NTB
+    function renderPlots(list) {
+      var container = document.getElementById('plotsContainer');
+      container.innerHTML = '';
+      list.forEach(function(p) {
+        var card = document.createElement('div');
+        card.className = 'bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-2xs space-y-2 text-xs';
+        card.innerHTML = `
+          <div class="flex justify-between items-start">
+            <div>
+              <span class="font-extrabold text-sm text-slate-900 dark:text-slate-100">${p.farmerName}</span>
+              <p class="text-slate-500">${p.region} • Kec. ${p.district}</p>
+            </div>
+            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300">
+              pH ${p.soilPh || p.soilPh}
+            </span>
+          </div>
+          <p class="text-slate-700 dark:text-slate-300 font-semibold">${p.commodityName} • ${p.areaInAre} Are</p>
+          <div class="p-2 bg-slate-50 dark:bg-slate-950/60 rounded-xl text-[11px] text-emerald-700 dark:text-emerald-400 font-medium">
+            💡 ${p.rec || p.recommendation || 'Paket Paten Nano Lengkap'}
+          </div>
+          <div class="flex justify-between items-center pt-1 border-t border-slate-100 dark:border-slate-800 text-[10px] text-slate-400">
+            <span>Koordinat: [${(p.lat || p.latitude || -8.5).toFixed(3)}, ${(p.lon || p.longitude || 116.5).toFixed(3)}]</span>
+            <a href="https://www.google.com/maps/search/?api=1&query=${p.lat || p.latitude},${p.lon || p.longitude}" target="_blank" class="text-emerald-600 font-bold hover:underline">Buka Maps ➔</a>
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    function filterPlots(reg) {
+      if (reg === 'Semua') {
+        renderPlots(landPlots);
+      } else {
+        renderPlots(landPlots.filter(function(p) { return p.region === reg; }));
+      }
+    }
+
+    // Render Riwayat Panen
+    function renderHarvests(list) {
+      var container = document.getElementById('harvestListContainer');
+      container.innerHTML = '';
+      list.forEach(function(h) {
+        var el = document.createElement('div');
+        el.className = 'p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/50 flex justify-between items-center';
+        el.innerHTML = `
+          <div>
+            <div class="flex items-center gap-2">
+              <strong class="text-slate-900 dark:text-slate-100">${h.seasonName}</strong>
+              <span class="px-1.5 py-0.2 rounded text-[9px] font-extrabold ${h.method === 'Paten Nano' ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-200 text-slate-700'}">${h.method}</span>
+            </div>
+            <p class="text-slate-500 text-[11px]">${h.commodityName} • ${h.areaInAre} Are • ${h.date}</p>
+          </div>
+          <div class="text-right">
+            <span class="font-extrabold text-emerald-700 dark:text-emerald-400 text-sm block">${h.yieldKg.toLocaleString('id-ID')} kg</span>
+            <span class="text-[10px] text-slate-400">Laba: Rp ${h.profitRp.toLocaleString('id-ID')}</span>
+          </div>
+        `;
+        container.appendChild(el);
+      });
+    }
+
+    // Render Forum
+    function renderForums(list) {
+      var container = document.getElementById('forumListContainer');
+      container.innerHTML = '';
+      list.forEach(function(f) {
+        var el = document.createElement('div');
+        el.className = 'p-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 space-y-1.5 text-xs';
+        el.innerHTML = `
+          <div class="flex justify-between items-start">
+            <div>
+              <span class="font-extrabold text-slate-900 dark:text-slate-100">${f.farmerName}</span>
+              <span class="text-slate-400 text-[11px]"> • ${f.region}</span>
+            </div>
+            <span class="text-emerald-600 font-bold">❤️ ${f.likes || 0}</span>
+          </div>
+          <h5 class="font-bold text-slate-800 dark:text-slate-200">${f.title}</h5>
+          <p class="text-slate-600 dark:text-slate-300 text-[11px] leading-relaxed">${f.message}</p>
+        `;
+        container.appendChild(el);
+      });
+    }
+
+    // Kalkulator Nutrisi
+    function calcNutrisi() {
+      var crop = document.getElementById('nutrisiCrop').value;
+      var phase = document.getElementById('nutrisiPhase').value;
+      var box = document.getElementById('nutrisiResultBox');
+      
+      box.innerHTML = `
+        <h4 class="font-extrabold text-emerald-800 dark:text-emerald-400">Rekomendasi Hara ${crop} (${phase}):</h4>
+        <p class="text-slate-700 dark:text-slate-300">
+          • Kebutuhan Unsur: Nitrogen (N) tinggi untuk pembentukan anakan, Phospat (P) untuk perakaran kuat, dan Kalium (K) untuk daya tahan penyakit.<br>
+          • Aplikasi Paten: Campurkan <strong>1 Sachet Paten Hijau + 1 Sachet Paten Imun</strong> per tangki semprot (17-20 Liter air). Semprot kabut pada pagi hari.
+        </p>
+      `;
+    }
+
+    // Submit Forum Post
+    function submitForumPost() {
+      var name = document.getElementById('forumName').value || "Lalu Mas'ud";
+      var region = document.getElementById('forumRegion').value || 'Lombok Barat';
+      var title = document.getElementById('forumTitle').value;
+      var msg = document.getElementById('forumMessage').value;
+
+      if (!title || !msg) {
+        alert('Silakan isi judul dan pesan pengalaman Anda.');
+        return;
+      }
+
+      var newPost = {
+        id: 'FRM-' + Date.now(),
+        farmerName: name,
+        region: region,
+        title: title,
+        message: msg,
+        likes: 1
+      };
+
+      forumPosts.unshift(newPost);
+      renderForums(forumPosts);
+
+      // Simpan ke Google Sheets jika di dalam GAS
+      if (typeof google !== 'undefined' && google.script && google.script.run) {
+        google.script.run
+          .withSuccessHandler(function() { showToast('Postingan tersimpan di Google Sheets!'); })
+          .saveForumPost(newPost);
+      } else {
+        showToast('Postingan tersimpan secara lokal!');
+      }
+
+      document.getElementById('forumTitle').value = '';
+      document.getElementById('forumMessage').value = '';
+    }
+
+    // Export PDF Laporan Tahunan Resmi
+    function downloadAnnualPDF() {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF('portrait', 'mm', 'a4');
+      const pageWidth = doc.internal.pageSize.getWidth();
+
+      // Header Banner
+      doc.setFillColor(11, 113, 59);
+      doc.rect(0, 0, pageWidth, 28, 'F');
+
+      doc.setTextColor(255, 255, 255);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(14);
+      doc.text('PT. RENNER INTI INTERNASIONAL', 14, 11);
+
+      doc.setFontSize(9);
+      doc.setFont('helvetica', 'normal');
+      doc.text('RENNER SYARIAH • SISTEM ANALISIS PERTANIAN PUPUK PATEN NANO', 14, 18);
+      doc.setFontSize(7.5);
+      doc.text('Izin Kementan RI: 02.02.2022.763 • DSN-MUI: 012.161.01/DSN-MUI/1X/2023', 14, 23);
+
+      // Document Title
+      doc.setTextColor(15, 23, 42);
+      doc.setFontSize(13);
+      doc.setFont('helvetica', 'bold');
+      doc.text('LAPORAN ANALITIK TAHUNAN & KELAYAKAN USAHA TANI', 14, 38);
+
+      doc.setFontSize(8.5);
+      doc.setFont('helvetica', 'normal');
+      doc.text('Keperluan: Pengajuan Permodalan KUR Syariah & Evaluasi Koperasi Petani', 14, 44);
+      doc.text('Tahun Buku: 2025/2026 • Wilayah Binaan: NTB (Lombok & Sumbawa)', 14, 49);
+
+      // Table Data
+      const tableData = harvestRecords.map(function(r) {
+        return [r.date, r.seasonName, r.commodityName, r.areaInAre + ' Are', r.method, r.yieldKg + ' kg', 'Rp ' + r.costRp.toLocaleString('id-ID'), 'Rp ' + r.profitRp.toLocaleString('id-ID')];
+      });
+
+      doc.autoTable({
+        startY: 55,
+        head: [['Tanggal', 'Musim Tanam', 'Komoditi', 'Luas', 'Metode', 'Hasil', 'Biaya', 'Laba Bersih']],
+        body: tableData,
+        headStyles: { fillColor: [11, 113, 59], textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 8 },
+        bodyStyles: { fontSize: 7.5 }
+      });
+
+      const finalY = doc.lastAutoTable.finalY || 100;
+
+      // Signatures
+      doc.setFontSize(8);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Pemilik Lahan / Petani,', 14, finalY + 15);
+      doc.text('Ketua Koperasi / Gapoktan,', 80, finalY + 15);
+      doc.text('Verifikator & Pengembang,', 145, finalY + 15);
+
+      doc.text("( Lalu Mas'ud )", 14, finalY + 32);
+      doc.text('( Gapoktan Sasak Sejahtera )', 80, finalY + 32);
+      doc.text('( Husni, S. Kom. I. )', 145, finalY + 32);
+
+      doc.setFontSize(7);
+      doc.setFont('helvetica', 'normal');
+      doc.text('Petani Pelaksana Mitra', 14, finalY + 36);
+      doc.text('Verifikasi Kelompok Tani', 80, finalY + 36);
+      doc.text('Member Renner Syariah', 145, finalY + 36);
+
+      doc.save('Laporan-Tahunan-Paten-Agro-Renner-Syariah.pdf');
+      showToast('Laporan PDF resmi berhasil diunduh!');
+    }
+
+    // Sinkronisasi dengan Google Apps Script Backend
+    function triggerSyncData() {
+      var syncIcon = document.getElementById('syncIcon');
+      syncIcon.className = 'inline-block animate-spin';
+      showToast('Menghubungkan ke Google Sheets...');
+
+      if (typeof google !== 'undefined' && google.script && google.script.run) {
+        google.script.run
+          .withSuccessHandler(function(response) {
+            syncIcon.className = 'inline-block';
+            if (response && response.success) {
+              if (response.plots && response.plots.length > 0) landPlots = response.plots;
+              if (response.harvests && response.harvests.length > 0) harvestRecords = response.harvests;
+              if (response.forums && response.forums.length > 0) forumPosts = response.forums;
+              if (response.spreadsheetUrl) spreadsheetUrl = response.spreadsheetUrl;
+
+              renderPlots(landPlots);
+              renderHarvests(harvestRecords);
+              renderForums(forumPosts);
+              showToast('Sinkronisasi Google Sheets sukses! (' + (response.syncTime || 'Terkini') + ')');
+            } else {
+              showToast('Gagal memuat data dari spreadsheet.');
+            }
+          })
+          .withFailureHandler(function(err) {
+            syncIcon.className = 'inline-block';
+            showToast('Koneksi Google Sheets gagal: ' + err);
+          })
+          .getInitialData();
+      } else {
+        setTimeout(function() {
+          syncIcon.className = 'inline-block';
+          showToast('Data lokal tersinkronisasi offline.');
+        }, 1000);
+      }
+    }
+
+    function openDatabaseSpreadsheet() {
+      if (spreadsheetUrl) {
+        window.open(spreadsheetUrl, '_blank');
+      } else if (typeof google !== 'undefined' && google.script && google.script.run) {
+        google.script.run
+          .withSuccessHandler(function(url) {
+            if (url) window.open(url, '_blank');
+          })
+          .getSpreadsheetUrl();
+      } else {
+        alert('Spreadsheet otomatis dibuat saat dideploy di Google Apps Script.');
+      }
+    }
+
+    function openAddPlotModal() {
+      var name = prompt('Nama Petani: ', "Lalu Mas'ud");
+      if (!name) return;
+      var region = prompt('Wilayah NTB (Lombok Barat/Tengah/Utara/Sumbawa/Bima/Dompu): ', 'Lombok Barat');
+      var are = prompt('Luas Lahan (Are): ', '25');
+
+      var newPlot = {
+        id: 'PLT-' + Date.now(),
+        farmerName: name,
+        region: region || 'Lombok Barat',
+        district: 'Sentra Tani',
+        commodityName: 'Padi Sawah',
+        areaInAre: parseInt(are) || 20,
+        soilPh: 6.2,
+        lat: -8.6833,
+        lon: 116.1333,
+        rec: 'Paket Paten Nano Rekomendasi Baru'
+      };
+
+      landPlots.unshift(newPlot);
+      renderPlots(landPlots);
+
+      if (typeof google !== 'undefined' && google.script && google.script.run) {
+        google.script.run
+          .withSuccessHandler(function() { showToast('Titik lahan tersimpan di Google Sheets!'); })
+          .saveLandPlot(newPlot);
+      } else {
+        showToast('Titik lahan tersimpan di memori perangkat.');
+      }
+    }
+
+    // Inisialisasi awal saat halaman dimuat
+    window.addEventListener('DOMContentLoaded', function() {
+      runCalculation();
+      renderPlots(landPlots);
+      renderHarvests(harvestRecords);
+      renderForums(forumPosts);
+      calcNutrisi();
+      triggerSyncData();
+    });
+  </script>
+</body>
+</html>

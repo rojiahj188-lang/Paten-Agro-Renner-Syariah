@@ -1,0 +1,33 @@
+{
+  "id": "/",
+  "name": "Paten Agro Renner Syariah",
+  "short_name": "Paten Agro",
+  "description": "Aplikasi analisis pupuk organik nano Paten, kalkulator nutrisi, pemetaan lahan GPS, dan laporan analitik panen.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#0f172a",
+  "theme_color": "#15803d",
+  "categories": ["productivity", "business", "utilities"],
+  "icons": [
+    {
+      "src": "/images/renner-logo.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/renner-logo.jpg",
+      "sizes": "192x192",
+      "type": "image/jpeg",
+      "purpose": "any"
+    },
+    {
+      "src": "/renner-logo.jpg",
+      "sizes": "512x512",
+      "type": "image/jpeg",
+      "purpose": "any"
+    }
+  ]
+}

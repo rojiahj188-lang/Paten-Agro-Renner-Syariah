@@ -1,0 +1,7 @@
+{
+  "name": "Paten Agro Renner Syariah - Analisis Pupuk Organik & Pertanian Pintar",
+  "description": "Aplikasi analisis produk Renner Syariah, kalkulator penghematan pupuk Paten Gold (1-100 are), jadwal pemupukan cerdas, deteksi penyakit AI, telemetri tanah & cuaca, serta analitik panen.",
+  "requestFramePermissions": ["camera"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
+
