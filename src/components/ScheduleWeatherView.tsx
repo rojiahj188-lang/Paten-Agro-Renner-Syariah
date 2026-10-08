@@ -31,7 +31,9 @@ import {
   CalendarCheck,
   MapPin,
   ArrowRight,
-  CloudLightning
+  CloudLightning,
+  Radio,
+  Navigation
 } from 'lucide-react';
 import { CommodityId, ScheduleItem, SensorData, WeatherDay, LandPlotLocation } from '../types';
 import { CROP_SCHEDULES } from '../data/cropSchedules';
@@ -46,6 +48,11 @@ import {
 import { exportFertilizationScheduleToPDF } from '../utils/pdfExport';
 import { FarmerDailyTasksModule } from './FarmerDailyTasksModule';
 import { InteractivePlantingCalendar } from './InteractivePlantingCalendar';
+import {
+  fetchDailyRainfallForecast,
+  FALLBACK_WEATHER_FORECAST,
+  RainfallForecastResult
+} from '../utils/weatherApi';
 
 interface ScheduleWeatherViewProps {
   initialCommodityId?: CommodityId;
@@ -98,16 +105,63 @@ export const ScheduleWeatherView: React.FC<ScheduleWeatherViewProps> = ({
   });
   const [testNotifFeedback, setTestNotifFeedback] = useState<string | null>(null);
 
-  // 7-day weather forecast data
-  const weatherForecast: WeatherDay[] = [
-    { dayName: 'Hari Ini', date: '6 Okt', tempMin: 24, tempMax: 32, condition: 'Cerah Berawan', humidity: 72, rainProbability: 20, sprayingRecommendation: 'Sangat Baik' },
-    { dayName: 'Besok', date: '7 Okt', tempMin: 25, tempMax: 33, condition: 'Cerah', humidity: 68, rainProbability: 10, sprayingRecommendation: 'Sangat Baik' },
-    { dayName: 'Rabu', date: '8 Okt', tempMin: 24, tempMax: 31, condition: 'Berawan', humidity: 75, rainProbability: 35, sprayingRecommendation: 'Baik' },
-    { dayName: 'Kamis', date: '9 Okt', tempMin: 23, tempMax: 29, condition: 'Hujan Ringan', humidity: 85, rainProbability: 65, sprayingRecommendation: 'Hati-hati' },
-    { dayName: 'Jumat', date: '10 Okt', tempMin: 23, tempMax: 28, condition: 'Hujan Lebat', humidity: 90, rainProbability: 80, sprayingRecommendation: 'Hindari (Potensi Hujan)' },
-    { dayName: 'Sabtu', date: '11 Okt', tempMin: 24, tempMax: 30, condition: 'Cerah Berawan', humidity: 74, rainProbability: 25, sprayingRecommendation: 'Sangat Baik' },
-    { dayName: 'Minggu', date: '12 Okt', tempMin: 25, tempMax: 32, condition: 'Cerah', humidity: 70, rainProbability: 15, sprayingRecommendation: 'Sangat Baik' }
-  ];
+  // 7-day weather forecast data state (terhubung API Open-Meteo & GPS)
+  const [weatherForecast, setWeatherForecast] = useState<WeatherDay[]>(FALLBACK_WEATHER_FORECAST);
+  const [weatherLocationName, setWeatherLocationName] = useState<string>('Lombok, NTB');
+  const [weatherCoords, setWeatherCoords] = useState<{ lat: number; lng: number }>({ lat: -8.7118, lng: 116.1554 });
+  const [isLoadingWeather, setIsLoadingWeather] = useState<boolean>(false);
+  const [isLiveWeatherApi, setIsLiveWeatherApi] = useState<boolean>(false);
+  const [weatherFetchedAt, setWeatherFetchedAt] = useState<string>('08:00');
+  const [weatherTotalRainWeekly, setWeatherTotalRainWeekly] = useState<number>(49.7);
+  const [weatherGpsDetected, setWeatherGpsDetected] = useState<boolean>(false);
+
+  // Fungsi memuat cuaca dari API berdasarkan koordinat lokasi
+  const loadWeatherFromApi = async (lat: number, lng: number, locName: string) => {
+    setIsLoadingWeather(true);
+    try {
+      const res: RainfallForecastResult = await fetchDailyRainfallForecast(lat, lng, locName);
+      setWeatherForecast(res.days);
+      setWeatherLocationName(res.location.locationName);
+      setWeatherCoords({ lat, lng });
+      setIsLiveWeatherApi(res.isLiveApi);
+      setWeatherFetchedAt(res.fetchedAt);
+      setWeatherTotalRainWeekly(res.totalRainfallWeeklyMm);
+    } catch (err) {
+      console.warn('Gagal memuat API cuaca:', err);
+    } finally {
+      setIsLoadingWeather(false);
+    }
+  };
+
+  // Deteksi lokasi pengguna via Geolocation GPS perangkat
+  const handleDetectUserLocationWeather = () => {
+    if (typeof navigator !== 'undefined' && 'geolocation' in navigator) {
+      setIsLoadingWeather(true);
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          const lat = pos.coords.latitude;
+          const lng = pos.coords.longitude;
+          setWeatherGpsDetected(true);
+          const locName = `Lokasi GPS Petani (${lat.toFixed(2)}°, ${lng.toFixed(2)}°)`;
+          loadWeatherFromApi(lat, lng, locName);
+          addNotification({
+            title: '📍 Lokasi GPS Cuaca Terdeteksi',
+            message: `Prakiraan cuaca & curah hujan harian disesuaikan dengan posisi GPS Anda (${lat.toFixed(4)}, ${lng.toFixed(4)}).`,
+            type: 'jadwal',
+            priority: 'normal'
+          });
+        },
+        (err) => {
+          console.warn('Geolocation denied/error:', err.message);
+          // Fallback ke Lombok NTB
+          loadWeatherFromApi(weatherCoords.lat, weatherCoords.lng, weatherLocationName);
+        },
+        { enableHighAccuracy: true, timeout: 8000 }
+      );
+    } else {
+      loadWeatherFromApi(weatherCoords.lat, weatherCoords.lng, weatherLocationName);
+    }
+  };
 
   // Calculate current Day After Planting (HST)
   const currentHST = Math.max(0, Math.floor((new Date().getTime() - new Date(plantingDate).getTime()) / (1000 * 60 * 60 * 24)));
@@ -155,9 +209,11 @@ export const ScheduleWeatherView: React.FC<ScheduleWeatherViewProps> = ({
       // Kebutuhan Air Tanaman ETc (mm/hari) = ETo * Kc
       const etc = parseFloat((eto * cropKcInfo.kc).toFixed(1));
 
-      // Estimasi Curah Hujan Berdasarkan Data Cuaca
+      // Curah Hujan Harian: ambil dari API langsung (day.rainfallMm) jika ada, atau estimasi cuaca
       let rainMm = 0;
-      if (day.condition.includes('Hujan Lebat')) {
+      if (typeof day.rainfallMm === 'number') {
+        rainMm = day.rainfallMm;
+      } else if (day.condition.includes('Hujan Lebat')) {
         rainMm = 35;
       } else if (day.condition.includes('Hujan Ringan') || day.condition.includes('Hujan')) {
         rainMm = 12;
@@ -360,6 +416,8 @@ export const ScheduleWeatherView: React.FC<ScheduleWeatherViewProps> = ({
 
   useEffect(() => {
     fetchSensorTelemetry();
+    // Inisialisasi API cuaca saat komponen dibuka
+    loadWeatherFromApi(weatherCoords.lat, weatherCoords.lng, weatherLocationName);
   }, []);
 
   // Synchronize reminder settings with current selected crop & planting date
@@ -511,22 +569,40 @@ export const ScheduleWeatherView: React.FC<ScheduleWeatherViewProps> = ({
               <CloudSun className="w-5 h-5" />
             </div>
             <div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 <h3 className="text-sm sm:text-base font-black font-['Outfit'] tracking-tight text-white flex items-center gap-1.5">
-                  Prakiraan Cuaca 3 Hari & Rekomendasi Lapangan
+                  Prakiraan Cuaca & Curah Hujan Harian
                 </h3>
-                <span className="hidden xs:inline-flex items-center gap-1 text-[10px] font-bold bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded-full border border-emerald-500/30">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                  Live Radar
+                <span className="inline-flex items-center gap-1 text-[10px] font-bold bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded-full border border-emerald-500/30">
+                  <span className={`w-1.5 h-1.5 rounded-full ${isLiveWeatherApi ? 'bg-emerald-400' : 'bg-amber-400'} animate-pulse`} />
+                  {isLiveWeatherApi ? 'Open-Meteo Live API' : 'Satelit Radar'}
                 </span>
+                {weatherGpsDetected && (
+                  <span className="inline-flex items-center gap-1 text-[9px] font-bold bg-blue-500/20 text-blue-300 px-1.5 py-0.5 rounded-md border border-blue-500/30">
+                    <Navigation className="w-2.5 h-2.5" /> GPS Aktif
+                  </span>
+                )}
               </div>
-              <p className="text-[11px] text-slate-300">
-                Lombok NTB • Keputusan cepat irigasi harian & jendela aman aplikasi pupuk nano
+              <p className="text-[11px] text-slate-300 flex items-center gap-1 mt-0.5">
+                <MapPin className="w-3 h-3 text-emerald-400 shrink-0" />
+                <span className="font-semibold text-emerald-200">{weatherLocationName}</span>
+                <span>• Akumulasi Hujan 7 Hari: <strong className="text-sky-300">{weatherTotalRainWeekly} mm</strong></span>
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex items-center gap-2 shrink-0 flex-wrap sm:flex-nowrap">
+            <button
+              type="button"
+              onClick={handleDetectUserLocationWeather}
+              disabled={isLoadingWeather}
+              className="text-[11px] font-bold text-slate-200 hover:text-white bg-white/10 hover:bg-white/20 px-2.5 py-1.5 rounded-xl border border-white/15 transition-all flex items-center gap-1.5 shadow-2xs"
+              title="Gunakan koordinat GPS perangkat untuk deteksi cuaca lokal"
+            >
+              <Navigation className={`w-3 h-3 text-emerald-400 ${isLoadingWeather ? 'animate-spin' : ''}`} />
+              <span>{isLoadingWeather ? 'Mendeteksi...' : 'GPS Lokasi Saya'}</span>
+            </button>
+
             {activeTab !== 'schedule' && (
               <button
                 type="button"
@@ -546,6 +622,7 @@ export const ScheduleWeatherView: React.FC<ScheduleWeatherViewProps> = ({
             const isRain = day.condition.toLowerCase().includes('hujan');
             const isCloudy = day.condition.toLowerCase().includes('awan');
             const isHeavyRain = day.condition.toLowerCase().includes('lebat');
+            const dailyRainMm = typeof day.rainfallMm === 'number' ? day.rainfallMm : (isHeavyRain ? 34 : isRain ? 12 : 0);
 
             return (
               <div
@@ -604,24 +681,25 @@ export const ScheduleWeatherView: React.FC<ScheduleWeatherViewProps> = ({
                     </div>
                   </div>
 
-                  {/* Rain Probability Gauge */}
+                  {/* Rain Probability & Rainfall Volume Gauge */}
                   <div className="text-right">
-                    <span className="text-[10px] text-slate-400 font-semibold block">Peluang Hujan</span>
+                    <span className="text-[10px] text-slate-400 font-semibold block">Curah Hujan</span>
                     <span className={`text-xs font-black font-['Outfit'] ${
-                      day.rainProbability >= 60 ? 'text-rose-400' : day.rainProbability >= 30 ? 'text-amber-300' : 'text-emerald-400'
+                      dailyRainMm >= 20 ? 'text-rose-400' : dailyRainMm > 0 ? 'text-sky-300' : 'text-slate-300'
                     }`}>
-                      {day.rainProbability}%
+                      {dailyRainMm > 0 ? `${dailyRainMm} mm` : '0 mm (Kering)'}
                     </span>
+                    <span className="text-[9px] text-slate-400 block">Peluang: {day.rainProbability}%</span>
                   </div>
                 </div>
 
                 {/* Direct Irrigation Decision Guidance */}
                 <div className="mt-2.5 pt-2 border-t border-white/10 flex items-center justify-between text-[10px]">
                   <span className="text-slate-300 font-medium">
-                    {day.rainProbability >= 60
-                      ? '🌧️ Kurangi/matikan pompa irigasi (tanah tersiram hujan)'
-                      : day.rainProbability >= 30
-                      ? '⛅ Irigasi sedang secukupnya (cek kelembapan tanah)'
+                    {dailyRainMm >= 20
+                      ? '🌧️ Matikan pompa air (curah hujan lebat mencukupi irigasi)'
+                      : dailyRainMm >= 5
+                      ? '⛅ Cek genangan parit (hujan ringan memasok sebagian air)'
                       : '☀️ Wajib irigasi penuh pagi/sore hari'}
                   </span>
                 </div>
@@ -804,54 +882,82 @@ export const ScheduleWeatherView: React.FC<ScheduleWeatherViewProps> = ({
 
       {/* 7-DAY WEATHER FORECAST */}
       <div className="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200 shadow-xs space-y-3">
-        <div className="flex items-center justify-between">
-          <h3 className="font-extrabold text-slate-900 text-sm sm:text-base flex items-center gap-2">
-            <CloudSun className="w-4 h-4 text-emerald-700" />
-            Laporan Cuaca Mingguan & Panduan Semprot
-          </h3>
-          <span className="text-[11px] text-slate-500">Prakiraan 7 Hari</span>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">
+          <div>
+            <h3 className="font-extrabold text-slate-900 text-sm sm:text-base flex items-center gap-2">
+              <CloudSun className="w-4 h-4 text-emerald-700" />
+              Laporan Cuaca Mingguan & Panduan Semprot
+              <span className={`w-2 h-2 rounded-full ${isLiveWeatherApi ? 'bg-emerald-500' : 'bg-amber-500'}`} />
+            </h3>
+            <p className="text-[11px] text-slate-500 flex items-center gap-1 mt-0.5">
+              <span>Lokasi: <strong>{weatherLocationName}</strong></span>
+              <span>• Total Curah Hujan: <strong className="text-blue-700">{weatherTotalRainWeekly} mm</strong></span>
+              <span>• Update: {weatherFetchedAt}</span>
+            </p>
+          </div>
+
+          <div className="flex items-center gap-2 self-start sm:self-auto">
+            <button
+              type="button"
+              onClick={() => loadWeatherFromApi(weatherCoords.lat, weatherCoords.lng, weatherLocationName)}
+              disabled={isLoadingWeather}
+              className="px-2.5 py-1 rounded-xl border border-slate-300 hover:bg-slate-50 text-slate-700 text-xs font-bold flex items-center gap-1.5 transition-colors"
+              title="Perbarui data prakiraan cuaca dari server satelit"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${isLoadingWeather ? 'animate-spin text-emerald-600' : ''}`} />
+              <span>Segarkan Cuaca</span>
+            </button>
+            <span className="text-[11px] font-bold px-2 py-1 bg-slate-100 text-slate-700 rounded-lg">Prakiraan 7 Hari</span>
+          </div>
         </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-7 gap-2">
-          {weatherForecast.map((day, idx) => (
-            <div
-              key={idx}
-              className={`p-2.5 rounded-xl border text-center flex flex-col justify-between ${
-                idx === 0
-                  ? 'bg-emerald-50/70 border-emerald-400 ring-1 ring-emerald-500/20'
-                  : 'bg-slate-50 border-slate-200'
-              }`}
-            >
-              <div>
-                <p className="text-xs font-bold text-slate-800">{day.dayName}</p>
-                <p className="text-[10px] text-slate-400">{day.date}</p>
-              </div>
+          {weatherForecast.map((day, idx) => {
+            const rainVal = typeof day.rainfallMm === 'number' ? day.rainfallMm : (day.condition.includes('Hujan Lebat') ? 34 : day.condition.includes('Hujan') ? 12 : 0);
 
-              <div className="my-2">
-                {day.condition.includes('Hujan') ? (
-                  <CloudRain className="w-6 h-6 text-blue-500 mx-auto" />
-                ) : (
-                  <Sun className="w-6 h-6 text-amber-500 mx-auto" />
-                )}
-                <p className="text-xs font-black text-slate-800 font-['Outfit'] mt-1">
-                  {day.tempMax}°C
-                </p>
-                <p className="text-[10px] text-slate-500">Hujan: {day.rainProbability}%</p>
-              </div>
+            return (
+              <div
+                key={idx}
+                className={`p-2.5 rounded-xl border text-center flex flex-col justify-between ${
+                  idx === 0
+                    ? 'bg-emerald-50/70 border-emerald-400 ring-1 ring-emerald-500/20'
+                    : 'bg-slate-50 border-slate-200'
+                }`}
+              >
+                <div>
+                  <p className="text-xs font-bold text-slate-800">{day.dayName}</p>
+                  <p className="text-[10px] text-slate-400">{day.date}</p>
+                </div>
 
-              <span className={`text-[9px] font-extrabold px-1.5 py-0.5 rounded-md truncate ${
-                day.sprayingRecommendation === 'Sangat Baik'
-                  ? 'bg-emerald-100 text-emerald-800'
-                  : day.sprayingRecommendation === 'Baik'
-                  ? 'bg-blue-100 text-blue-800'
-                  : day.sprayingRecommendation === 'Hati-hati'
-                  ? 'bg-amber-100 text-amber-800'
-                  : 'bg-rose-100 text-rose-800'
-              }`}>
-                {day.sprayingRecommendation}
-              </span>
-            </div>
-          ))}
+                <div className="my-2">
+                  {day.condition.includes('Hujan') ? (
+                    <CloudRain className="w-6 h-6 text-blue-500 mx-auto" />
+                  ) : (
+                    <Sun className="w-6 h-6 text-amber-500 mx-auto" />
+                  )}
+                  <p className="text-xs font-black text-slate-800 font-['Outfit'] mt-1">
+                    {day.tempMax}°C
+                  </p>
+                  <p className="text-[10px] text-slate-500">Hujan: {day.rainProbability}%</p>
+                  <p className={`text-[10px] font-black mt-0.5 ${rainVal >= 20 ? 'text-rose-600' : rainVal > 0 ? 'text-blue-600' : 'text-slate-400'}`}>
+                    {rainVal > 0 ? `${rainVal} mm` : '0 mm'}
+                  </p>
+                </div>
+
+                <span className={`text-[9px] font-extrabold px-1.5 py-0.5 rounded-md truncate ${
+                  day.sprayingRecommendation === 'Sangat Baik'
+                    ? 'bg-emerald-100 text-emerald-800'
+                    : day.sprayingRecommendation === 'Baik'
+                    ? 'bg-blue-100 text-blue-800'
+                    : day.sprayingRecommendation === 'Hati-hati'
+                    ? 'bg-amber-100 text-amber-800'
+                    : 'bg-rose-100 text-rose-800'
+                }`}>
+                  {day.sprayingRecommendation}
+                </span>
+              </div>
+            );
+          })}
         </div>
       </div>
 

@@ -202,6 +202,8 @@ export interface WeatherDay {
   humidity: number;
   rainProbability: number;
   sprayingRecommendation: 'Sangat Baik' | 'Baik' | 'Hindari (Potensi Hujan)' | 'Hati-hati';
+  rainfallMm?: number; // Curah hujan harian terukur / terprediksi (mm)
+  uvIndex?: number;
 }
 
 export interface HarvestRecord {

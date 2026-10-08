@@ -23,12 +23,18 @@ import {
   Target,
   Zap,
   Check,
-  Sprout
+  Sprout,
+  FileSpreadsheet
 } from 'lucide-react';
 import { HarvestRecord } from '../types';
 import { getHarvestRecords, addHarvestRecord, saveHarvestRecords, addNotification } from '../utils/offlineStorage';
 import { formatRupiah, formatNumber } from '../utils/calculatorEngine';
-import { exportHarvestHistoryToPDF, exportAnnualAnalyticsReportToPDF, AnnualReportOptions } from '../utils/pdfExport';
+import {
+  exportHarvestHistoryToPDF,
+  exportAnnualAnalyticsReportToPDF,
+  exportHarvestHistoryToCSV,
+  AnnualReportOptions
+} from '../utils/pdfExport';
 import { HarvestPerformanceChart } from './HarvestPerformanceChart';
 import { VideoTutorialModal } from './VideoTutorialModal';
 import { DeployPublishInstallGuideModal } from './DeployPublishInstallGuideModal';
@@ -184,6 +190,25 @@ export const AnalyticsDashboardView: React.FC = () => {
       alert('Gagal mengekspor PDF: ' + err.message);
     } finally {
       setIsExportingPdf(false);
+    }
+  };
+
+  const handleExportCSV = () => {
+    if (records.length === 0) {
+      alert('Belum ada data catatan panen untuk diekspor ke file CSV/Excel.');
+      return;
+    }
+    try {
+      exportHarvestHistoryToCSV(records, farmerNameForPdf);
+      addNotification({
+        title: '📊 File CSV Panen Berhasil Diunduh',
+        message: `Rekapitulasi data (${records.length} musim tanam) berhasil diekspor ke format CSV / Excel untuk arsip perangkat.`,
+        type: 'jadwal',
+        priority: 'normal'
+      });
+    } catch (err: any) {
+      console.error(err);
+      alert('Gagal mengekspor CSV: ' + err.message);
     }
   };
 
@@ -651,6 +676,15 @@ export const AnalyticsDashboardView: React.FC = () => {
           >
             <FileDown className="w-3.5 h-3.5" />
             <span>{isExportingPdf ? 'Mengekspor...' : 'Unduh Rekap PDF'}</span>
+          </button>
+
+          <button
+            onClick={handleExportCSV}
+            className="px-3 py-1.5 rounded-xl bg-teal-50 dark:bg-teal-950/50 hover:bg-teal-100 dark:hover:bg-teal-900/60 text-teal-800 dark:text-teal-300 border border-teal-300 dark:border-teal-800 text-xs font-bold flex items-center gap-1.5 shadow-2xs transition-colors"
+            title="Ekspor Data Panen ke Format CSV / Excel untuk Arsip"
+          >
+            <FileSpreadsheet className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400" />
+            <span>Ekspor CSV (Excel)</span>
           </button>
 
           <button

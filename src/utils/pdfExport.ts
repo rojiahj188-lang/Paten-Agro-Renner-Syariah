@@ -876,3 +876,116 @@ function finalYCheck(y: number, doc: jsPDF): number {
   return y;
 }
 
+/**
+ * Ekspor Data Historis Panen ke File CSV (Comma Separated Values / Excel)
+ */
+export function exportHarvestHistoryToCSV(
+  records: HarvestRecord[],
+  farmerName: string = 'Petani Mitra Renner Syariah'
+): void {
+  if (records.length === 0) {
+    throw new Error('Tidak ada data catatan panen untuk diekspor ke CSV.');
+  }
+
+  // Header CSV
+  const headers = [
+    'No',
+    'Tanggal Catat',
+    'Nama Musim Tanam',
+    'Komoditas',
+    'Luas (Are)',
+    'Metode Budidaya',
+    'Hasil Panen (Kg)',
+    'Hasil Panen (Ton/Ha)',
+    'Biaya Operasional (Rp)',
+    'Pendapatan Penjualan (Rp)',
+    'Laba Bersih (Rp)',
+    'ROI (%)',
+    'Catatan / Keterangan'
+  ];
+
+  // Helper escape string untuk format CSV
+  const escapeCsv = (str: any): string => {
+    if (str === null || str === undefined) return '""';
+    const s = String(str).replace(/"/g, '""');
+    return `"${s}"`;
+  };
+
+  const rows: string[] = [];
+  // Row 1: Judul Laporan
+  rows.push(escapeCsv(`LAPORAN HISTORIS PANEN PETANI - PATEN AGRO RENNER SYARIAH`));
+  rows.push(escapeCsv(`Nama Petani / Mitra: ${farmerName}`));
+  rows.push(escapeCsv(`Tanggal Unduh: ${new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}`));
+  rows.push(''); // Baris kosong
+
+  // Row Header
+  rows.push(headers.map(h => escapeCsv(h)).join(','));
+
+  // Rows Data
+  records.forEach((rec, idx) => {
+    const yieldTonPerHa = rec.areaInAre > 0
+      ? (rec.yieldKg / (rec.areaInAre / 100) / 1000).toFixed(2)
+      : '0.00';
+    const roi = rec.costRp > 0
+      ? ((rec.profitRp / rec.costRp) * 100).toFixed(1)
+      : '0.0';
+
+    const row = [
+      idx + 1,
+      rec.date,
+      rec.seasonName,
+      rec.commodityName,
+      rec.areaInAre,
+      rec.method,
+      rec.yieldKg,
+      yieldTonPerHa,
+      rec.costRp,
+      rec.revenueRp,
+      rec.profitRp,
+      roi,
+      rec.notes || '-'
+    ];
+
+    rows.push(row.map(cell => escapeCsv(cell)).join(','));
+  });
+
+  // Summary row di bagian bawah
+  const totalYieldKg = records.reduce((acc, r) => acc + r.yieldKg, 0);
+  const totalCostRp = records.reduce((acc, r) => acc + r.costRp, 0);
+  const totalRevenueRp = records.reduce((acc, r) => acc + r.revenueRp, 0);
+  const totalProfitRp = records.reduce((acc, r) => acc + r.profitRp, 0);
+  const totalAreaAre = records.reduce((acc, r) => acc + r.areaInAre, 0);
+
+  rows.push('');
+  const summaryRow = [
+    escapeCsv('TOTAL AKUMULASI'),
+    escapeCsv(''),
+    escapeCsv(`${records.length} Musim Tanam`),
+    escapeCsv(''),
+    totalAreaAre,
+    escapeCsv(''),
+    totalYieldKg,
+    escapeCsv(''),
+    totalCostRp,
+    totalRevenueRp,
+    totalProfitRp,
+    escapeCsv(''),
+    escapeCsv('PT Renner Inti Internasional - Paten Agro')
+  ];
+  rows.push(summaryRow.join(','));
+
+  // Tambahkan UTF-8 BOM agar Excel dapat membuka karakter Indonesia dengan sempurna
+  const csvContent = '\uFEFF' + rows.join('\r\n');
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  const safeName = farmerName.replace(/[^a-zA-Z0-9]/g, '_');
+  const timestamp = new Date().toISOString().split('T')[0];
+  link.setAttribute('href', url);
+  link.setAttribute('download', `Rekap-Data-Panen-${safeName}-${timestamp}.csv`);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+}
+
